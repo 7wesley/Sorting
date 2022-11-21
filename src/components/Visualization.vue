@@ -41,15 +41,29 @@
     </nav>
     <p class="mt-3 font-bold text-xl">
       Visualization
-      <font-awesome-icon icon="fa-solid fa-rotate" @click="randomize" />
+      <font-awesome-icon
+        icon="fa-solid fa-shuffle"
+        class="hover:text-blue-500 hover:cursor-pointer"
+        @click="randomize"
+      />
     </p>
     <main class="mt-4">
       <section class="graph flex flex-col justify-end">
         <div class="flex flex-row justify-center">
-          <div class="flex flex-col justify-end" v-for="item in items">
+          <div class="flex flex-col justify-end" v-for="(item, index) in items">
+            <font-awesome-icon
+              icon="fa-solid fa-sort-down"
+              v-if="index == i"
+              color="red"
+            />
+            <font-awesome-icon
+              icon="fa-solid fa-sort-down"
+              v-if="index == j"
+              color="blue"
+            />
             <div
-              class="graph-item border-2 border-gray-600 px-3 mx-2 rounded-t"
-              :style="{ height: item * 10 + 'px' }"
+              class="graph-item border-2 border-gray-600 px-3 mx-2 rounded-t mt-1"
+              :style="{ height: 18 * item + 'px' }"
             >
               {{ item }}
             </div>
@@ -58,19 +72,39 @@
       </section>
       <section class="flex justify-center mt-2">
         <button
-          class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == 'play' }"
+          @click="updatePlayer('play')"
         >
           <font-awesome-icon icon="fa-solid fa-play" />
         </button>
         <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == 'pause' }"
+          @click="updatePlayer('pause')"
         >
           <font-awesome-icon icon="fa-solid fa-pause" />
         </button>
         <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == 'next' }"
+          @click="updatePlayer('next')"
         >
           <font-awesome-icon icon="fa-solid fa-forward-step" />
+        </button>
+        <button
+          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == 'back' }"
+          @click="updatePlayer('back')"
+        >
+          <font-awesome-icon icon="fa-solid fa-backward-step" />
+        </button>
+        <button
+          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-1.5 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == 'restart' }"
+          @click="updatePlayer('restart')"
+        >
+          <font-awesome-icon icon="fa-solid fa-rotate" />
         </button>
       </section>
     </main>
@@ -81,21 +115,116 @@
 export default {
   data() {
     return {
-      items: [6, 3, 7, 5, 9, 7],
-      sortSelected: "Insertion",
+      items: [6, 3, 7, 5, 9, 8],
+      sortSelected: "",
+      mediaSelected: "",
+      i: -1,
+      j: -1,
+      frames: new Array<any>(),
+      frameIndex: 0,
     };
   },
+  watch: {
+    sortSelected() {
+      this.redoSorting();
+    },
+  },
   methods: {
-    bubbleSort(): number {
-      return 1;
-    },
-    randomize() {
-      this.items = this.items.map(() => Math.floor(Math.random() * 7 + 3));
-    },
     updateSort(selected: string) {
       this.sortSelected = selected;
       this.$emit("sort", selected);
     },
+    async updatePlayer(selected: string) {
+      if (this.mediaSelected == selected && this.mediaSelected == "play") {
+        return;
+      }
+
+      this.mediaSelected = selected;
+
+      this.playFrames();
+    },
+    async playFrames() {
+      while (
+        this.mediaSelected == "play" &&
+        this.frameIndex < this.frames.length - 1
+      ) {
+        this.updateFrame(this.frameIndex + 1);
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      if (
+        this.mediaSelected == "next" &&
+        this.frameIndex < this.frames.length - 1
+      ) {
+        this.updateFrame(this.frameIndex + 1);
+      } else if (this.mediaSelected == "back" && this.frameIndex >= 1) {
+        this.updateFrame(this.frameIndex - 1);
+      } else if (this.mediaSelected == "restart") {
+        this.updateFrame(0);
+      }
+    },
+    updateFrame(index: number) {
+      console.log(this.frames, this.frameIndex);
+      this.frameIndex = index;
+      const frame = this.frames[this.frameIndex];
+
+      this.items = frame.steps;
+      this.i = frame.i;
+      this.j = frame.j;
+    },
+    randomize() {
+      let set: Set<number> = new Set<number>();
+
+      while (set.size !== 6) {
+        set.add(Math.floor(Math.random() * 8) + 2);
+      }
+      this.items = [...set];
+      this.redoSorting();
+    },
+    redoSorting() {
+      this.frames = [];
+      this.frameIndex = 0;
+      this.saveStep(this.items.slice(), -1, -1);
+
+      switch (this.sortSelected) {
+        case "Insertion":
+          this.insertionSort(this.items.slice());
+      }
+      
+      this.frameIndex = 0;
+      this.i = -1;
+      this.j = -1;
+    },
+    saveStep(arr: Array<any>, i: number, j: number) {
+      this.frames[this.frameIndex] = {
+        steps: arr.slice(),
+        i,
+        j,
+      };
+      this.frameIndex++;
+    },
+    insertionSort(arr: Array<number>) {
+      let i, key, j;
+      for (i = 1; i < arr.length; i++) {
+        key = arr[i];
+        j = i - 1;
+
+        this.saveStep(arr, i, j);
+
+        while (j >= 0 && arr[j] > key) {
+          arr[j + 1] = arr[j];
+          j = j - 1;
+
+          this.saveStep(arr, i, j);
+        }
+        arr[j + 1] = key;
+
+        this.saveStep(arr, i, j);
+      }
+    },
+  },
+  mounted() {
+    this.sortSelected = "Insertion";
   },
 };
 </script>
@@ -115,9 +244,5 @@ export default {
     rgba(105, 115, 228, 0.233) 10px,
     rgba(105, 115, 228, 0.233) 20px
   );
-}
-.fa-rotate:hover {
-  color: rgb(59 130 246);
-  cursor: pointer;
 }
 </style>
