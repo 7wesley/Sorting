@@ -1,6 +1,7 @@
 <template>
   <section class="informationTab p-6">
     <p class="text-xs">{{ sortType }} Sort</p>
+    <p class="font-bold text-xl mb-4">Description</p>
     <p class="font-bold text-xl mb-4">Step by step</p>
     <font-awesome-icon icon="fa-solid fa-code" size="lg" class="" />
     <section class="code mt-2 border-gray-600"></section>
