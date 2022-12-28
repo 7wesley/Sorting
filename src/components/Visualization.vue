@@ -3,39 +3,12 @@
     <nav>
       <ul class="flex flex-wrap">
         <li
-          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': sortSelected == 'Insertion' }"
-          @click="updateSort('Insertion')"
+          v-for="key in Object.keys(algorithms)"
+          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded mt-1"
+          :class="{ 'bg-blue-500 text-white': sortSelected == key }"
+          @click="updateSort(key)"
         >
-          <a href="#">Insertion</a>
-        </li>
-        <li
-          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': sortSelected == 'Selection' }"
-          @click="updateSort('Selection')"
-        >
-          <a href="#">Selection</a>
-        </li>
-        <li
-          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': sortSelected == 'Bubble' }"
-          @click="updateSort('Bubble')"
-        >
-          <a href="#">Bubble</a>
-        </li>
-        <li
-          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': sortSelected == 'Merge' }"
-          @click="updateSort('Merge')"
-        >
-          <a href="#">Merge</a>
-        </li>
-        <li
-          class="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': sortSelected == 'Quick' }"
-          @click="updateSort('Quick')"
-        >
-          <a href="#">Quick</a>
+          <a href="#">{{ key }}</a>
         </li>
       </ul>
     </nav>
@@ -75,39 +48,12 @@
       </section>
       <section class="flex justify-center mt-2">
         <button
-          class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': mediaSelected == 'play' }"
-          @click="updatePlayer('play')"
+          v-for="(val, key) in icons"
+          class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white mx-0.5 px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          :class="{ 'bg-blue-500 text-white': mediaSelected == key }"
+          @click="updatePlayer(key)"
         >
-          <font-awesome-icon icon="fa-solid fa-play" />
-        </button>
-        <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': mediaSelected == 'pause' }"
-          @click="updatePlayer('pause')"
-        >
-          <font-awesome-icon icon="fa-solid fa-pause" />
-        </button>
-        <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': mediaSelected == 'next' }"
-          @click="updatePlayer('next')"
-        >
-          <font-awesome-icon icon="fa-solid fa-forward-step" />
-        </button>
-        <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': mediaSelected == 'back' }"
-          @click="updatePlayer('back')"
-        >
-          <font-awesome-icon icon="fa-solid fa-backward-step" />
-        </button>
-        <button
-          class="ml-2 bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white px-1.5 border border-blue-500 border-b-2 hover:border-transparent rounded"
-          :class="{ 'bg-blue-500 text-white': mediaSelected == 'restart' }"
-          @click="updatePlayer('restart')"
-        >
-          <font-awesome-icon icon="fa-solid fa-rotate" />
+          <font-awesome-icon :icon="'fa-solid fa-' + val" />
         </button>
       </section>
     </main>
@@ -115,17 +61,27 @@
 </template>
 
 <script lang="ts">
-import type Frame from "@/types/Frame";
+import type Frames from "@/types/Frames";
+import type Controls from "@/types/Controls";
+import AlgorithmsClass from "@/classes/Algorithms";
 
 export default {
   data() {
     return {
       items: [6, 3, 7, 5, 9, 8],
-      currentFrame: {} as Frame,
+      currentFrame: {} as Frames,
       sortSelected: "",
       mediaSelected: "",
-      frames: new Array<any>(),
+      frames: new Array<Frames>(),
       frameIndex: 0,
+      icons: {
+        play: "play",
+        pause: "pause",
+        next: "forward-step",
+        back: "backward-step",
+        restart: "rotate",
+      } as Controls,
+      algorithms: new AlgorithmsClass(),
     };
   },
   watch: {
@@ -168,9 +124,9 @@ export default {
       }
     },
     updateFrame(index: number) {
-      console.log(this.frames, this.frameIndex);
       this.frameIndex = index;
       this.currentFrame = this.frames[this.frameIndex];
+      this.$emit("line", this.currentFrame.currentLine);
     },
     randomize() {
       let set: Set<number> = new Set<number>();
@@ -184,7 +140,7 @@ export default {
     redoSorting() {
       this.frames = [];
       this.frameIndex = 0;
-      this.saveStep(this.items, -1, -1);
+      this.saveStep(this.items, -1, -1, 0);
       this.currentFrame = this.frames[0];
 
       switch (this.sortSelected) {
@@ -206,31 +162,36 @@ export default {
 
       this.frameIndex = 0;
     },
-    saveStep(arr: Array<number>, i: number, j: number) {
+    saveStep(arr: Array<number>, i: number, j: number, currentLine: number) {
       this.frames[this.frameIndex] = {
         steps: arr.slice(),
         i,
         j,
+        currentLine,
       };
       this.frameIndex++;
     },
     insertionSort(arr: Array<number>) {
-      let i, key, j;
+      let i,
+        key,
+        j = 0;
       for (i = 1; i < arr.length; i++) {
+        this.saveStep(arr, i, j, 0);
         key = arr[i];
         j = i - 1;
 
-        this.saveStep(arr, i, j);
-
         while (j >= 0 && arr[j] > key) {
-          arr[j + 1] = arr[j];
-          j = j - 1;
-
-          this.saveStep(arr, i, j);
+          this.saveStep(arr, i, j, 1);
+          this.saveStep(arr, i, j, 2);
+          if (arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+            this.saveStep(arr, i, j, 3);
+          }
         }
+        this.saveStep(arr, i, j, 4);
         arr[j + 1] = key;
-
-        this.saveStep(arr, i, j);
+        this.saveStep(arr, i, j, 5);
       }
     },
     selectionSort(arr: Array<number>) {
@@ -240,12 +201,12 @@ export default {
           if (arr[j] < arr[lowest]) {
             lowest = j;
           }
-          this.saveStep(arr, i, j);
+          this.saveStep(arr, i, j, 0);
         }
         if (lowest !== i) {
           // Swap
           [arr[i], arr[lowest]] = [arr[lowest], arr[i]];
-          this.saveStep(arr, i, -1);
+          this.saveStep(arr, i, -1, 1);
         }
       }
       return arr;
@@ -254,14 +215,14 @@ export default {
       for (var i = 0; i < arr.length; i++) {
         // Last i elements are already in place
         for (var j = 0; j < arr.length - i - 1; j++) {
-          this.saveStep(arr, i, j);
+          this.saveStep(arr, i, j, 0);
 
           // Checking if the item at present iteration
           // is greater than the next iteration
           if (arr[j] > arr[j + 1]) {
             // If the condition is true then swap them
             [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
-            this.saveStep(arr, i, j);
+            this.saveStep(arr, i, j, 1);
           }
         }
       }
@@ -283,7 +244,7 @@ export default {
         this.mergeSortSplit(array)
       );
 
-      this.saveStep(sortedSubArray, 0, 0);
+      this.saveStep(sortedSubArray, 0, 0, 0);
       return sortedSubArray;
     },
     mergeSortMerge(left: Array<number>, right: Array<number>): Array<number> {
@@ -313,7 +274,7 @@ export default {
         if (arr[i] < pivotValue) {
           // Swapping elements
           [arr[i], arr[pivotIndex]] = [arr[pivotIndex], arr[i]];
-          this.saveStep(arr, i, end);
+          this.saveStep(arr, i, end, 0);
 
           // Moving to next element
           pivotIndex++;
@@ -332,14 +293,14 @@ export default {
 
       // Returns pivotIndex
       let index = this.quickSortPartition(arr, start, end);
-      this.saveStep(arr, start, end);
+      this.saveStep(arr, start, end, 1);
 
       // Recursively apply the same logic to the left and right subarrays
       this.quickSortRecursive(arr, start, index - 1);
-      this.saveStep(arr, start, end);
+      this.saveStep(arr, start, end, 2);
 
       this.quickSortRecursive(arr, index + 1, end);
-      this.saveStep(arr, start, end);
+      this.saveStep(arr, start, end, 3);
     },
   },
   mounted() {

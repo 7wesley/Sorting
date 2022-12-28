@@ -7,8 +7,8 @@ import Visualization from "./components/Visualization.vue";
   <section
     class="grid grid-cols-1 md:grid-cols-2 divide-y-2 md:divide-x-2 md:divide-y-0 divide-dashed"
   >
-    <Visualization @sort="updateSort" />
-    <Information :sortType="sort" />
+    <Visualization @sort="updateSort" @line="updateLine" />
+    <Information :sortType="sort" :currentLine="line" />
   </section>
   <!-- <RouterView /> -->
 </template>
@@ -18,12 +18,16 @@ export default {
   data() {
     return {
       sort: "Insertion",
+      description: "Insertion sort",
+      line: 0,
     };
   },
   methods: {
     updateSort(selected: string) {
-      console.log(selected)
       this.sort = selected;
+    },
+    updateLine(line: number) {
+      this.line = line;
     },
   },
 };
