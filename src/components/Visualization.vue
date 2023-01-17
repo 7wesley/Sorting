@@ -50,7 +50,7 @@
       <section class="flex justify-center mt-2 mb-2">
         <button
           v-for="(val, key) in icons"
-          class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white mx-0.5 px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
+          class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white mx-0.5 px-2 border border-blue-500 border-b-2 hover:border-transparent rounded media-btn"
           :class="{ 'bg-blue-500 text-white': mediaSelected == key }"
           @click="updatePlayer(key)"
         >
@@ -355,6 +355,7 @@ export default {
   height: 240px;
   border: 0.125em solid lightblue;
   border-radius: 0.75em;
+  background: linear-gradient(-45deg, rgb(50, 70, 138, 0.5) 15px, white 0);
 }
 .graph-item {
   border: 0.125em solid lightblue;
@@ -395,5 +396,8 @@ export default {
 }
 .sort-btn {
   font-size: 1.05rem;
+}
+.media-btn {
+  font-size: 1.1rem;
 }
 </style>

@@ -117,6 +117,7 @@ export default {
 .code {
   border: 0.125em solid rgb(75 85 99);
   border-radius: 0.75em;
+  background: linear-gradient(-45deg, rgba(233, 72, 9, 0.5) 15px, white 0);
 }
 .description {
   font-size: 0.88rem;
