@@ -3,4 +3,5 @@ export default interface Frames {
   i: number;
   j: number;
   currentLine: number;
+  highlight: Array<number>;
 }

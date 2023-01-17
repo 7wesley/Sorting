@@ -1,10 +1,10 @@
 <template>
-  <section class="visualizationTab sm:p-4 md:p-6">
+  <section class="visualizationTab p-1 sm:p-6 pb-4">
     <nav>
       <ul class="flex flex-wrap">
         <li
           v-for="key in Object.keys(algorithms)"
-          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 border border-blue-500 border-b-2 hover:border-transparent rounded mt-1"
+          class="mr-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white px-2 py-0.5 border border-blue-500 border-b-2 hover:border-transparent rounded mt-1 sort-btn"
           :class="{ 'bg-blue-500 text-white': sortSelected == key }"
           @click="updateSort(key)"
         >
@@ -22,31 +22,32 @@
     </p>
     <main class="mt-4">
       <section class="graph flex flex-col justify-end">
-        <div class="flex flex-row justify-center">
+        <transition-group
+          class="flex flex-row justify-center"
+          name="bars"
+          tag="section"
+        >
           <div
             class="flex flex-col justify-end"
             v-for="(item, index) in currentFrame.steps"
+            :key="item"
           >
-            <font-awesome-icon
-              icon="fa-solid fa-sort-down"
-              v-if="index == currentFrame.i"
-              color="red"
-            />
-            <font-awesome-icon
-              icon="fa-solid fa-sort-down"
-              v-if="index == currentFrame.j"
-              color="blue"
-            />
             <div
-              class="graph-item border-2 border-gray-600 px-3 mx-2 rounded-t mt-1"
-              :style="{ height: 18 * item + 'px' }"
+              class="graph-item border-2 border-gray-600 mx-2 rounded-t mt-1"
+              :class="{
+                'green-bg': index == currentFrame.i,
+                'red-bg': index == currentFrame.j,
+                highlight: currentFrame.highlight.includes(index),
+              }"
+              :style="{ height: 22 * item + 'px' }"
             >
               {{ item }}
             </div>
           </div>
-        </div>
+        </transition-group>
       </section>
-      <section class="flex justify-center mt-2">
+
+      <section class="flex justify-center mt-2 mb-2">
         <button
           v-for="(val, key) in icons"
           class="bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white mx-0.5 px-2 border border-blue-500 border-b-2 hover:border-transparent rounded"
@@ -70,7 +71,7 @@ export default {
     return {
       items: [6, 3, 7, 5, 9, 8],
       currentFrame: {} as Frames,
-      sortSelected: "",
+      sortSelected: "Insertion",
       mediaSelected: "",
       frames: new Array<Frames>(),
       frameIndex: 0,
@@ -84,15 +85,11 @@ export default {
       algorithms: new AlgorithmsClass(),
     };
   },
-  watch: {
-    sortSelected() {
-      this.redoSorting();
-    },
-  },
   methods: {
     updateSort(selected: string) {
       this.sortSelected = selected;
       this.$emit("sort", selected);
+      this.redoSorting();
     },
     async updatePlayer(selected: string) {
       if (this.mediaSelected == selected && this.mediaSelected == "play") {
@@ -109,7 +106,7 @@ export default {
         this.frameIndex < this.frames.length - 1
       ) {
         this.updateFrame(this.frameIndex + 1);
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 150));
       }
 
       if (
@@ -138,10 +135,12 @@ export default {
       this.redoSorting();
     },
     redoSorting() {
-      this.frames = [];
-      this.frameIndex = 0;
-      this.saveStep(this.items, -1, -1, 0);
-      this.currentFrame = this.frames[0];
+      this.frames = [
+        { steps: this.items, i: -1, j: -1, highlight: [], currentLine: 0 },
+      ];
+      this.updateFrame(0);
+      this.frameIndex++;
+      this.mediaSelected = "";
 
       switch (this.sortSelected) {
         case "Insertion":
@@ -154,7 +153,11 @@ export default {
           this.bubbleSort(this.items.slice());
           break;
         case "Merge":
-          this.mergeSortSplit(this.items.slice());
+          const mergeItems = this.items.slice();
+          const originalItems = this.items.slice();
+
+          this.mergeSortSplit(mergeItems);
+          this.items = originalItems;
           break;
         case "Quick":
           this.quickSortRecursive(this.items.slice(), 0, this.items.length - 1);
@@ -162,67 +165,78 @@ export default {
 
       this.frameIndex = 0;
     },
-    saveStep(arr: Array<number>, i: number, j: number, currentLine: number) {
+    saveStep(
+      arr: Array<number>,
+      i: number = -1,
+      j: number = -1,
+      currentLine: number,
+      highlight: Array<number> = []
+    ) {
       this.frames[this.frameIndex] = {
         steps: arr.slice(),
         i,
         j,
         currentLine,
+        highlight: highlight,
       };
       this.frameIndex++;
     },
     insertionSort(arr: Array<number>) {
-      let i,
-        key,
-        j = 0;
+      let i, key, j;
       for (i = 1; i < arr.length; i++) {
-        this.saveStep(arr, i, j, 0);
+        this.saveStep(arr, i, undefined, 0);
         key = arr[i];
-        j = i - 1;
 
-        while (j >= 0 && arr[j] > key) {
+        for (j = i - 1; j >= 0 && arr[j] > key; j--) {
           this.saveStep(arr, i, j, 1);
           this.saveStep(arr, i, j, 2);
-          if (arr[j] > key) {
-            arr[j + 1] = arr[j];
-            j = j - 1;
-            this.saveStep(arr, i, j, 3);
-          }
+          [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+          this.saveStep(arr, i, j, 3);
         }
-        this.saveStep(arr, i, j, 4);
-        arr[j + 1] = key;
-        this.saveStep(arr, i, j, 5);
+        this.saveStep(arr, undefined, j + 1, 4);
       }
     },
     selectionSort(arr: Array<number>) {
       for (let i = 0; i < arr.length; i++) {
+        this.saveStep(arr, i, undefined, 0);
         let lowest = i;
+        this.saveStep(arr, i, undefined, 1);
+
         for (let j = i + 1; j < arr.length; j++) {
+          this.saveStep(arr, i, j, 2);
+          this.saveStep(arr, i, j, 3);
+
           if (arr[j] < arr[lowest]) {
             lowest = j;
+            this.saveStep(arr, i, j, 4);
           }
-          this.saveStep(arr, i, j, 0);
         }
         if (lowest !== i) {
           // Swap
           [arr[i], arr[lowest]] = [arr[lowest], arr[i]];
-          this.saveStep(arr, i, -1, 1);
+          this.saveStep(arr, i, lowest, 5);
         }
       }
       return arr;
     },
     bubbleSort(arr: Array<number>) {
-      for (var i = 0; i < arr.length; i++) {
-        // Last i elements are already in place
-        for (var j = 0; j < arr.length - i - 1; j++) {
-          this.saveStep(arr, i, j, 0);
+      let sorted = false;
+      while (!sorted) {
+        this.saveStep(arr, undefined, undefined, 0);
+        sorted = true;
+        this.saveStep(arr, undefined, undefined, 1);
 
+        for (var i = 0; i < arr.length; i++) {
+          this.saveStep(arr, i, undefined, 2);
+          this.saveStep(arr, i, i + 1, 3);
           // Checking if the item at present iteration
           // is greater than the next iteration
-          if (arr[j] > arr[j + 1]) {
+          if (arr[i] > arr[i + 1]) {
             // If the condition is true then swap them
-            [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
-            this.saveStep(arr, i, j, 1);
+            [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+            this.saveStep(arr, i, i + 1, 4);
+            sorted = false;
+            this.saveStep(arr, i, i + 1, 5);
           }
         }
       }
@@ -239,12 +253,20 @@ export default {
       const left = array.splice(0, half);
 
       // merging the two split arrays recursively
+
       const sortedSubArray = this.mergeSortMerge(
         this.mergeSortSplit(left),
         this.mergeSortSplit(array)
       );
+      this.saveStep(this.items, undefined, undefined, 1);
 
-      this.saveStep(sortedSubArray, 0, 0, 0);
+      const highlighted = this.highlightItems(sortedSubArray);
+      this.saveStep(this.items, undefined, undefined, 2, highlighted);
+
+      this.replaceItems(sortedSubArray);
+      this.saveStep(this.items, undefined, undefined, 3, highlighted);
+      this.saveStep(this.items, undefined, undefined, 4, highlighted);
+
       return sortedSubArray;
     },
     mergeSortMerge(left: Array<number>, right: Array<number>): Array<number> {
@@ -270,19 +292,26 @@ export default {
       // Taking the last element as the pivot
       const pivotValue = arr[end];
       let pivotIndex = start;
+      this.saveStep(arr, undefined, end, 1);
+
       for (let i = start; i < end; i++) {
+        this.saveStep(arr, i, end, 2);
+        this.saveStep(arr, i, end, 3);
         if (arr[i] < pivotValue) {
           // Swapping elements
           [arr[i], arr[pivotIndex]] = [arr[pivotIndex], arr[i]];
-          this.saveStep(arr, i, end, 0);
+          this.saveStep(arr, i, end, 4);
 
           // Moving to next element
           pivotIndex++;
+          this.saveStep(arr, i, end, 5);
         }
       }
 
       // Putting the pivot value in the middle
       [arr[pivotIndex], arr[end]] = [arr[end], arr[pivotIndex]];
+      this.saveStep(arr, pivotIndex, end, 6);
+      this.saveStep(arr, pivotIndex, end, 7);
       return pivotIndex;
     },
     quickSortRecursive(arr: Array<number>, start: number, end: number) {
@@ -293,25 +322,37 @@ export default {
 
       // Returns pivotIndex
       let index = this.quickSortPartition(arr, start, end);
-      this.saveStep(arr, start, end, 1);
 
       // Recursively apply the same logic to the left and right subarrays
       this.quickSortRecursive(arr, start, index - 1);
-      this.saveStep(arr, start, end, 2);
 
       this.quickSortRecursive(arr, index + 1, end);
-      this.saveStep(arr, start, end, 3);
+    },
+    highlightItems(arr: Array<number>): Array<number> {
+      let highlight = new Array<number>();
+
+      arr.forEach((e) => {
+        highlight.push(this.currentFrame.steps.findIndex((s) => s == e));
+      });
+      return highlight;
+    },
+    replaceItems(arr: Array<number>) {
+      const lastFrame = this.frames[this.frames.length - 1];
+      const steps = lastFrame.steps.slice();
+      const highlighted = lastFrame.highlight.sort((a, b) => a - b);
+      steps.splice(highlighted[0], highlighted.length, ...arr);
+      this.items = steps;
     },
   },
   mounted() {
-    this.sortSelected = "Insertion";
+    this.redoSorting();
   },
 };
 </script>
 
 <style>
 .graph {
-  height: 200px;
+  height: 240px;
   border: 0.125em solid lightblue;
   border-radius: 0.75em;
 }
@@ -324,5 +365,35 @@ export default {
     rgba(105, 115, 228, 0.233) 10px,
     rgba(105, 115, 228, 0.233) 20px
   );
+  padding: 0 0.9rem 0 0.9rem;
+}
+.bars-move {
+  transition: all 0.5s ease;
+} /* apply transition to moving elements */
+.bars-enter-active,
+.bars-leave-active {
+  transition: all 0.5s ease;
+}
+.bars-enter-from,
+.bars-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+/* ensure leaving items are taken out of layout flow so that moving
+   animations can be calculated correctly. */
+.bars-leave-active {
+  position: absolute;
+}
+.green-bg {
+  background: rgba(61, 181, 99, 0.7);
+}
+.red-bg {
+  background: rgba(213, 28, 28, 0.7);
+}
+.highlight {
+  background: rgba(61, 181, 99, 0.7);
+}
+.sort-btn {
+  font-size: 1.05rem;
 }
 </style>

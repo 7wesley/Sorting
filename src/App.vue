@@ -5,12 +5,11 @@ import Visualization from "./components/Visualization.vue";
 
 <template>
   <section
-    class="grid grid-cols-1 md:grid-cols-2 divide-y-2 md:divide-x-2 md:divide-y-0 divide-dashed"
+    class="grid grid-cols-1 md:grid-cols-2 divide-y-2 md:divide-x-2 md:divide-y-0 divide-dashed md:h-full"
   >
     <Visualization @sort="updateSort" @line="updateLine" />
     <Information :sortType="sort" :currentLine="line" />
   </section>
-  <!-- <RouterView /> -->
 </template>
 
 <script lang="ts">
@@ -33,8 +32,4 @@ export default {
 };
 </script>
 
-<style scoped>
-section {
-  height: 100%;
-}
-</style>
+<style scoped></style>
